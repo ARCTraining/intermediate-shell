@@ -1,0 +1,9 @@
+1000		! Number of stars
+0.5		! Virial factor (ratio of kinetic to potential energy)
+1.6            	! Fractal dimension (controls substructure)
+2.            	! Cluster radius (parsecs)
+10            	! Simulation length (Myrs)
+0.1            	! Snapshot interval (Myrs)
+
+
+

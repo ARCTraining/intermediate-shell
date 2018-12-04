@@ -1,0 +1,155 @@
+---
+title: "Unix Shell recap"
+teaching: 0
+exercises: 0
+questions:
+- "What is a command shell and why would I use one?"
+- "How can I move around on my computer?"
+- "How can I see what files and directories I have?"
+- "How can I specify the location of a file or directory on my computer?"
+- "How can I create, copy, and delete files and directories?"
+- "How can I edit files?"
+- "How can I combine existing commands to do new things?"
+- "How can I save and re-use commands?"
+objectives:
+- "Explain how the shell relates to the keyboard, the screen, the operating system, and users’ programs."
+- "Explain when and why command-line interfaces should be used instead of graphical interfaces."
+- "Explain the similarities and differences between a file and a directory."
+- "Translate an absolute path into a relative path and vice versa."
+- "Construct absolute and relative paths that identify specific files and directories."
+- "Demonstrate the use of tab completion, and explain its advantages."
+- "Create a directory hierarchy that matches a given diagram."
+- "Create files in that hierarchy using an editor or by copying and renaming existing files."
+- "Delete, copy and move specified files and/or directories."
+- "Redirect a command’s output to a file."
+- "Process a file instead of keyboard input using redirection."
+- "Construct command pipelines with two or more stages."
+- "Explain what usually happens if a program or pipeline isn’t given any input to process."
+- "Explain Unix’s ‘small pieces, loosely joined’ philosophy."
+- "Write a shell script that runs a command or series of commands for a fixed set of files."
+- "Run a shell script from the command line."
+- "Write a shell script that operates on a set of files defined by the user on the command line."
+- "Create pipelines that include shell scripts you, and others, have written."
+keypoints:
+- "A shell is a program whose primary purpose is to read commands and run other programs."
+- "The shell’s main advantages are its high action-to-keystroke ratio, its support for automating repetitive tasks, and its capacity to access networked machines."
+- "The shell’s main disadvantages are its primarily textual nature and how cryptic its commands and operation can be."
+- "The file system is responsible for managing information on the disk."
+- "Information is stored in files, which are stored in directories (folders)."
+- "Directories can also store other directories, which forms a directory tree."
+- "`cd path` changes the current working directory."
+- "`ls path` prints a listing of a specific file or directory; `ls` on its own lists the current working directory."
+- "`pwd` prints the user’s current working directory."
+- "`/` on its own is the root directory of the whole file system."
+- "A relative path specifies a location starting from the current location."
+- "An absolute path specifies a location from the root of the file system."
+- "Directory names in a path are separated with `/` on Unix, but `\\` on Windows."
+- "`..` means 'the directory above the current one'; `.` on its own means 'the current directory'."
+- "Most files' names are something.extension. The extension isn't required, and doesn't guarantee anything, but is normally used to indicate the type of data in the file."
+- "`cp old new` copies a file."
+- "`mkdir path` creates a new directory."
+- "`mv old new` moves (renames) a file or directory."
+- "`rm path` removes (deletes) a file."
+- "`*` matches zero or more characters in a filename, so `*.txt` matches all files ending in `.txt`."
+- "`?` matches any single character in a filename, so `?.txt` matches `a.txt` but not `any.txt`."
+- "Use of the Control key may be described in many ways, including `Ctrl-X`, `Control-X`, and `^X`."
+- "The shell does not have a trash bin: once something is deleted, it’s really gone."
+- "Depending on the type of work you do, you may need a more powerful text editor than Nano."
+- "`cat` displays the contents of its inputs."
+- "`head` displays the first 10 lines of its input."
+- "`tail` displays the last 10 lines of its input."
+- "`sort` sorts its inputs."
+- "`wc` counts lines, words, and characters in its inputs."
+- "`command > file` redirects a command’s output to a file."
+- "`first | second` is a pipeline: the output of the first command is used as the input to the second."
+- "The best way to use the shell is to use pipes to combine simple single-purpose programs (filters)."
+- "Save commands in files (usually called shell scripts) for re-use."
+- "`bash filename` runs the commands saved in a file."
+- "`$@` refers to all of a shell script’s command-line arguments."
+- "`$1`, `$2`, etc., refer to the first command-line argument, the second command-line argument, etc."
+- "Place variables in quotes if the values might have spaces in them."
+- "Letting users decide what files to process is more flexible and more consistent with built-in Unix commands."
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment="")
+```
+
+Please read the following episodes from Software Carpentry if you are new to the Unix shell.
+
+- [Introducing the Shell](http://swcarpentry.github.io/shell-novice/01-intro/index.html)
+- [Navigating Files and Directories](http://swcarpentry.github.io/shell-novice/02-filedir/index.html)
+- [Working With Files and Directories](http://swcarpentry.github.io/shell-novice/03-create/index.html)
+- [Pipes and Filters](http://swcarpentry.github.io/shell-novice/04-pipefilter/index.html)
+
+Shell parameter expansion is one way to process shell variables.
+We are only going to see three expansions and we invite you to visit the [manual](https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html#Shell-Parameter-Expansion) for more.
+
+To trim the parameter we can use `${parameter:offset:length}`.
+
+```{bash}
+string=01234567890abcdefgh
+```
+
+```{bash}
+echo ${string:7}
+```
+
+```{bash}
+echo ${string:7:0}
+```
+
+```{bash}
+echo ${string:7:2}
+```
+
+```{bash}
+echo ${string:7:-2}
+```
+
+```{bash}
+echo ${string: -7}
+```
+
+    
+```{bash}
+echo ${string: -7:0}
+```
+
+```{bash}
+echo ${string: -7:2}
+```
+
+```{bash}
+echo ${string: -7:-2}
+```
+
+To replace part of the parameter, we can use `${parameter/pattern/string}`.
+
+```{bash}
+filename=snap001.txt
+```
+
+```{bash}
+echo ${filename/snap/shot}
+```
+
+```{bash}
+echo ${filename/.txt/.backup}
+```
+
+Replace part of the parameter is very handful when using commands that require the name of the input and output file and they have different extensions.
+
+The third and last expansion that we are going to see is called, command substitution. Command substitution allows the output of a command to replace the command itself. Command substitution occurs when a command is enclosed as follows:
+
+```
+$(command)
+```
+
+Bash performs the expansion by executing command in a subshell environment and replacing the command substitution with the standard output of the command, with any trailing newlines deleted.
+
+```{bash}
+echo $(find . -maxdepth 1 -type f)
+```
+
+{% include links.md %}

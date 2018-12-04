@@ -1,0 +1,241 @@
+---
+title: "Regular Expressions"
+teaching: 25
+exercises: 20
+questions:
+- "What are regular expressions?"
+objectives:
+- "Use `grep` to select lines from text files that match simple patterns."
+keypoints:
+- "`grep` selects lines in files that match patterns."
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment="")
+```
+
+In the same way that many of us now use "Google" as a 
+verb meaning "to find", Unix programmers often use the 
+word "grep".
+"grep" is a contraction of "global/regular expression/print",
+a common sequence of operations in early Unix text editors.
+It is also the name of a very useful command-line program.
+
+`grep` finds and prints lines in files that match a pattern.
+For our examples,
+we will use a file that contains three haikus taken from a
+1998 competition in *Salon* magazine. 
+
+```{bash}
+cat haiku.txt
+```
+
+> ## Forever, or Five Years
+>
+> We haven't linked to the original haikus because they don't appear to be on *Salon*'s site any longer.
+> As [Jeff Rothenberg said](http://www.clir.org/pubs/archives/ensuring.pdf),
+> "Digital information lasts forever --- or five years, whichever comes first."
+> Luckily, popular content often [has backups](http://wiki.c2.com/?ComputerErrorHaiku).
+{: .callout}
+
+Let's find lines that contain the word "not":
+
+```{bash}
+grep not haiku.txt
+```
+
+Here, `not` is the pattern we're searching for. The grep command searches through the file, looking for matches to the pattern specified. To use it type `grep`, then the pattern we're searching for and finally the name of the file (or files) we're searching in.
+
+The output is the three lines in the file that contain the letters "not".
+
+Let's try a different pattern: "The".
+
+```{bash}
+grep The haiku.txt
+```
+
+This time,
+two lines that include the letters "The" are outputted.
+However, one instance of those letters is contained within a larger word,
+"Thesis".
+
+To restrict matches to lines containing the word "The" on its own,
+we can give `grep` with the `-w` flag.
+This will limit matches to word boundaries.
+
+```{bash}
+grep -w The haiku.txt
+```
+
+Note that a "word boundary" includes the start and end of a line, so not
+just letters surrounded by spaces. 
+Sometimes we don't
+want to search for a single word, but a phrase. This is also easy to do with
+`grep` by putting the phrase in quotes.
+
+```{bash}
+grep -w "is not" haiku.txt
+```
+
+We've now seen that you don't have to have quotes around single words,
+but it is useful to use quotes when searching for multiple words.
+It also helps to make it easier to distinguish between the search term or phrase
+and the file being searched.
+We will use quotes in the remaining examples.
+
+Another useful option is `-n`, which numbers the lines that match:
+
+```{bash}
+grep -n "it" haiku.txt
+```
+
+Here, we can see that lines 5, 9, and 10 contain the letters "it".
+
+We can combine options (i.e. flags) as we do with other Unix commands.
+For example, let's find the lines that contain the word "the". We can combine
+the option `-w` to find the lines that contain the word "the" and `-n` to number the lines that match:
+
+```{bash}
+grep -n -w "the" haiku.txt
+```
+
+Now we want to use the option `-i` to make our search case-insensitive:
+
+```{bash}
+grep -n -w -i "the" haiku.txt
+```
+
+Now, we want to use the option `-v` to invert our search, i.e., we want to output
+the lines that do not contain the word "the".
+
+```{bash}
+grep -n -w -v "the" haiku.txt
+```
+
+`grep` has lots of other options. To find out what they are, please visit the manual.
+
+> ## Using `grep`
+>
+> Which command would result in the following output:
+>
+> ~~~
+> and the presence of absence:
+> ~~~
+> {: .output}
+>
+> 1. `grep "of" haiku.txt`
+> 2. `grep -E "of" haiku.txt`
+> 3. `grep -w "of" haiku.txt`
+> 4. `grep -i "of" haiku.txt`
+>
+> > ## Solution
+> > The correct answer is 3, because the `-w` flag looks only for whole-word matches.
+> > The other options will all match "of" when part of another word.
+> {: .solution}
+{: .challenge}
+
+`grep`'s real power doesn't come from its options, though; it comes from
+the fact that patterns can include wildcards. (The technical name for
+these is **regular expressions**, which
+is what the "re" in "grep" stands for.)
+
+> ## Regular Expression Libraries
+>
+> All the popular programming languages has at least one regular expression library.
+> Not always they have the same default behaviour so you need to be careful.
+{: .callout}
+
+The regular expressions that we saw so far didn't make use of any operators or metacharacters.
+The characters that are operators are
+
+- `^`: matches the beginning of a string
+- `$`: matches only at the end of a string
+- `.`: matches any single character
+- `[...]`: matches any one of the characters that are enclosed in the square brackets
+- `[^...]`: matches any characters except those in the square brackets
+- `|`: is used to specify alternatives
+- `(...)`: are used for grouping in regular expressions
+- `*`: the preceding regular expression should be repeated as many times as necessary to find a match
+- `+`: the preceding regular expression must be matched at least once
+- `?`: the preceding regular expression can be matched either once or not at all
+- `{n,m}`: the preceding regular expression is repeated n to m times
+
+The power of regular expression is more visible in structured data.
+
+```{bash}
+head snap.txt
+```
+
+If we want to find particles with mass of 0.13, we can't use
+
+```{bash}
+grep 0.13 snap.txt
+```
+
+because it will return lines with velocity of 0.13.
+With regular expressions,
+we can restrict the search to the first "column".
+
+```{bash}
+grep -P '^0\.13' snap.txt
+```
+
+If we want to find particles with mass of 3 solar mass,
+we could try
+
+```{bash}
+grep -P '^3' snap.txt
+```
+
+Note that this will return
+
+```
+34.38	-1.15	-0.25	-0.9	0.14	0.55	1.23
+```
+
+We need to elaborate a bit more on our regular expression.
+One more reliable regular expression is
+
+```{bash}
+grep -P '^3\.' snap.txt
+```
+
+If we want to find particles with vx of 0.16,
+we could try
+
+```{bash}
+grep -P '^.*\t.*\t.*\t.*\t0.16' snap.txt
+```
+
+Note the lines
+
+```
+0.11	1.16	-0.5	0.52	0.11	0.68	0.16
+```
+
+and
+
+```
+1.83	0.23	-0.51	-0.79	0.06	0.16	1.28
+```
+
+We could fix it using
+
+```{bash}
+grep -P '^(.{3,5}\t){4}0.16' snap.txt
+```
+
+> ## Alternatives
+>
+> Select the lines of `gapminder_data.csv` that have `Europe` or `Asia`.
+>
+> > ## Solution
+> >
+> > ```
+> > grep -P "(Europe|Asia)" gapminder_data.csv
+> > ```
+> {: .solution}
+{: .challenge}
+
+
+{% include links.md %}

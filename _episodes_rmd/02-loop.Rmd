@@ -1,0 +1,349 @@
+---
+title: "Loops"
+teaching: 40
+exercises: 10
+questions:
+- "How can I perform the same actions on many different files?"
+objectives:
+- "Write a loop that applies one or more commands separately to each file in a set of files."
+- "Trace the values taken on by a loop variable during execution of the loop."
+- "Explain the difference between a variable's name and its value."
+- "Explain why spaces and some punctuation characters shouldn't be used in file names."
+- "Demonstrate how to see what commands have recently been executed."
+- "Re-run recently executed commands without retyping them."
+keypoints:
+- "A `for` loop repeats commands once for every thing in a list."
+- "Every `for` loop needs a variable to refer to the thing it is currently operating on."
+- "Use `$name` to expand a variable (i.e., get its value). `${name}` can also be used."
+- "Do not use spaces, quotes, or wildcard characters such as '*' or '?' in filenames, as it complicates variable expansion."
+- "Give files consistent names that are easy to match with wildcard patterns to make it easy to select them for looping."
+- "Use the up-arrow key to scroll up through previous commands to edit and repeat them."
+- "Use `Ctrl-R` to search through the previously entered commands."
+- "Use `history` to display recent commands, and `!number` to repeat a command by number."
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment="")
+```
+
+**Loops** are key to productivity improvements through automation as they allow us to execute
+commands repetitively. Similar to wildcards and tab completion, using loops also reduces the
+amount of typing (and typing mistakes).
+Suppose we have several hundred snapshots data files named `snap001.txt`, `snap002.txt`, and so on.
+In this example,
+we'll use the `high_equilibrium/snapshots` directory which only has one hundred example files,
+but the principles can be applied to many many more files at once.
+
+```{bash}
+ls high_equilibrium/snapshots/
+```
+
+We would like to modify these files, but also save a version of the original files, naming the copies
+`snap001.original.txt`, `snap002.original.txt`, and so on.
+We can't use:
+
+```
+cp high_equilibrium/snapshots/*.txt high_equilibrium/snapshots/*.original.txt
+```
+
+because that would expand to:
+
+```
+cp high_equilibrium/snapshots/snap001.txt high_equilibrium/snapshots/snap002.txt ... high_equilibrium/snapshots/*.original.txt
+```
+
+This wouldn't back up our files, instead we get an error:
+
+
+```{bash, error=TRUE}
+cp high_equilibrium/snapshots/*.txt high_equilibrium/snapshots/*.original.txt
+```
+
+This problem arises when `cp` receives more than two inputs. When this happens, it
+expects the last input to be a directory where it can copy all the files it was passed.
+Since there is no directory named `high_equilibrium/snapshots/*.original.txt`,
+we get an error.
+
+Instead, we can use a **loop**
+to do some operation once for each thing in a list.
+Here's a simple example that displays the first three lines of each file in turn:
+
+```{bash}
+for filename in high_equilibrium/snapshots/snap001.txt high_equilibrium/snapshots/snap002.txt
+do
+  head -n 4 $filename
+done
+```
+
+Note that it is common practice to indent the line(s) of code within a for loop.
+The only purpose is to make the code easier to read -- it is not required for the loop to run.
+
+When the shell sees the keyword `for`,
+it knows to repeat a command (or group of commands) once for each item in a list.
+Each time the loop runs (called an iteration), an item in the list is assigned in sequence to
+the **variable**, and the commands inside the loop are executed, before moving on to 
+the next item in the list.
+Inside the loop,
+we call for the variable's value by putting `$` in front of it.
+The `$` tells the shell interpreter to treat
+the **variable** as a variable name and substitute its value in its place,
+rather than treat it as text or an external command. 
+
+In this example, the list is two filenames: `high_equilibrium/snapshots/snap001.txt` and `high_equilibrium/snapshots/snap002.txt`.
+Each time the loop iterates, it will assign a file name to the variable `filename`
+and run the `head` command.
+The first time through the loop,
+`$filename` is `high_equilibrium/snapshots/snap001.txt`. 
+The interpreter runs the command `head` on `high_equilibrium/snapshots/snap001.txt`, 
+and the prints the 
+first three lines of `high_equilibrium/snapshots/snap001.txt`.
+For the second iteration, `$filename` becomes 
+`high_equilibrium/snapshots/snap002.txt`. This time, the shell runs `head` on `high_equilibrium/snapshots/snap002.txt`
+and prints the first three lines of `high_equilibrium/snapshots/snap002.txt`. 
+Since the list was only two items, the shell exits the `for` loop.
+
+When using variables it is also
+possible to put the names into curly braces to clearly delimit the variable
+name: `$filename` is equivalent to `${filename}`, but is different from
+`${file}name`. You may find this notation in other people's programs.
+
+Returning to our example in the `high_equilibrium/snapshots/` directory,
+we have called the variable in this loop `filename`
+in order to make its purpose clearer to human readers.
+The shell itself doesn't care what the variable is called;
+if we wrote this loop as:
+
+```{bash}
+for x in high_equilibrium/snapshots/snap001.txt high_equilibrium/snapshots/snap002.txt
+do
+    head -n 4 $x
+done
+```
+
+or
+
+```{bash}
+for temperature in high_equilibrium/snapshots/snap001.txt high_equilibrium/snapshots/snap002.txt
+do
+    head -n 4 $temperature
+done
+```
+
+it would work exactly the same way.
+*Don't do this.*
+Programs are only useful if people can understand them,
+so meaningless names (like `x`) or misleading names (like `temperature`)
+increase the odds that the program won't do what its readers think it does.
+
+Let's continue with our example in the `high_equilibrium/snapshots/` directory.
+Here's a slightly more long loop:
+
+```{bash}
+for filename in high_equilibrium/snapshots/snap001.txt high_equilibrium/snapshots/snap002.txt
+do
+    echo $filename
+    head -n 4 $filename | tail -n 1
+done
+```
+
+The **loop body**
+then executes two commands for each of those files.
+The first, `echo`, just prints its command-line arguments to standard output.
+
+In this case,
+since the shell expands `$filename` to be the name of a file,
+`echo $filename` just prints the name of the file.
+Note that we can't write this as:
+
+```{bash}
+for filename in high_equilibrium/snapshots/snap001.txt high_equilibrium/snapshots/snap002.txt
+do
+    $filename
+    head -n 4 $filename | tail -n 1
+done
+```
+
+because then the first time through the loop,
+when `$filename` expanded to `high_equilibrium/snapshots/snap001.txt`, the shell would try to run `high_equilibrium/snapshots/snap001.txt` as a program.
+Finally,
+the `head` and `tail` combination selects line 4
+from whatever file is being processed
+(assuming the file has at least 4 lines).
+
+Going back to our original file copying problem, we can solve it using this loop:
+
+```{bash}
+for filename in high_equilibrium/snapshots/*.txt
+do
+    cp $filename ${filename/txt/original.txt}
+done
+```
+
+This loop runs the `cp` command once for each filename.
+
+> ## Nested loops
+>
+> Suppose that you have two or more R Markdown files
+> and you want to convert them to HTML and Microsoft Office Word.
+> The shell command to convert one file to one format is
+>
+> ```
+> Rscript -e "rmarkdown::render(file, format)"
+> ```
+>
+> Write the for-loop to convert the files.
+> Your code should look something like
+>
+> > ## Solution
+> >
+> > ```
+> > for filename in *.Rmd
+> > do
+> >     for format in html_document word_document
+> >     do
+> >     Rscript -e "rmarkdown::render(\"$filename\", \"$format\")"
+> >     done
+> > done
+> > ```
+> {: .solution}
+{: .challenge}
+
+Since the `cp` command does not normally produce any output, it’s hard to check that the loop is doing the correct thing. By prefixing the command with `echo` it is possible to see each command as it would be executed.
+
+```{bash}
+for filename in high_equilibrium/snapshots/*.txt
+do
+    echo "Copying $filename ..." && cp $filename ${filename/txt/original.txt} && echo "$filename copied sucessfully"
+done
+```
+
+The `&&` operator separate items in a list of commands. The command after `&&` is executed if, and only if, the command before returns an exit status of zero. This ensure that if the command `cp` fail for any reason we see that information on our log. If you are expecting the first commnd to returns a non-zero exit status, you can use the `||` operator.
+
+In our example,
+the new files end with `original.txt`.
+Because we run the same loop, `for filename in high_equilibrium/snapshots/*.txt`, twice,
+we would end up with files `high_equilibrium/snapshots/snap001.txt`, `high_equilibrium/snapshots/snap001.original.txt`, `high_equilibrium/snapshots/snap001.original.original.txt`, `high_equilibrium/snapshots/snap002.txt`, `high_equilibrium/snapshots/snap002.original.txt`, `high_equilibrium/snapshots/snap002.original.original.txt`, and so on.
+
+> ## Using command substitution
+>
+> Avoid the copy of files that end with `original.txt` using command substitution.
+> Your code should look something like
+>
+> ```
+> for filename in $(...)
+> do
+>     echo "Copying $filename ..." && cp $filename ${filename/txt/original.txt} && echo "$filename copied sucessfully"
+> done
+> ```
+>
+> > ## Solution
+> >
+> > ```
+> > for filename in $(find high_equilibrium/snapshots/ -t f | grep -v "original")
+> > do
+> >     echo "Copying $filename ..." && cp $filename ${filename/txt/original.txt} && echo "$filename copied sucessfully"
+> > done
+> > ```
+> {: .solution}
+{: .challenge}
+
+> ## Using exit status
+>
+> Avoid the copy of files that end with `original.txt` using the exit status of grep.
+> Your code should look something like
+>
+> ```
+> for filename in high_equilibrium/snapshots/*.txt
+> do
+>     ... && echo "Copying $filename ..." && cp $filename ${filename/txt/original.txt} && echo "$filename copied sucessfully"
+> done
+> ```
+>
+> > ## Solution
+> >
+> > ```
+> > for filename in high_equilibrium/snapshots/*.txt
+> > do
+> >     echo $filename | grep -v original && echo "Copying $filename ..." && cp $filename ${filename/txt/original.txt} && echo "$filename copied sucessfully"
+> > done
+> > ```
+> {: .solution}
+{: .challenge}
+
+> ## Using exit status
+>
+> Avoid the copy of files that end with `original.txt` using the exit status of grep.
+> Your code should look something like
+>
+> ```
+> for filename in high_equilibrium/snapshots/*.txt
+> do
+>     ... && echo "Copying $filename ..." && cp $filename ${filename/txt/original.txt} && echo "$filename copied sucessfully"
+> done
+> ```
+>
+> > ## Solution
+> >
+> > ```
+> > for filename in high_equilibrium/snapshots/*.txt
+> > do
+> >     echo $filename | grep -v original && echo "Copying $filename ..." && cp $filename ${filename/txt/original.txt} && echo "$filename copied sucessfully"
+> > done
+> > ```
+> {: .solution}
+{: .challenge}
+
+We need to limit the processing or not one file
+and for that Bash has builtin conditional expressions.
+
+```{bash}
+for filename in high_equilibrium/snapshots/*.txt
+do
+    if [[ $(echo $filename | grep -v original) ]]
+    then
+        echo "Skipping $filename"
+    else
+       echo "Copying $filename ..." && cp $filename ${filename/txt/original.txt} && echo "$filename copied sucessfully"
+    fi
+done
+```
+
+Expressions may be unary or binary. Unary expressions are often used to examine the status of a file. There are string operators and numeric comparison operators as well. The full list of expressions is below.
+
+- `-a file`: True if file exists.
+- `-b file`: True if file exists and is a block special file.
+- `-c file`: True if file exists and is a character special file.
+- `-d file`: True if file exists and is a directory.
+- `-e file`: True if file exists.
+- `-f file`: True if file exists and is a regular file.
+- `-g file`: True if file exists and its set-group-id bit is set.
+- `-h file`: True if file exists and is a symbolic link.
+- `-k file`: True if file exists and its "sticky" bit is set.
+- `-p file`: True if file exists and is a named pipe (FIFO).
+- `-r file`: True if file exists and is readable.
+- `-s file`: True if file exists and has a size greater than zero.
+- `-t fd`: True if file descriptor fd is open and refers to a terminal.
+- `-u file`: True if file exists and its set-user-id bit is set.
+- `-w file`: True if file exists and is writable.
+- `-x file`: True if file exists and is executable.
+- `-G file`: True if file exists and is owned by the effective group id.
+- `-L file`: True if file exists and is a symbolic link.
+- `-N file`: True if file exists and has been modified since it was last read.
+- `-O file`: True if file exists and is owned by the effective user id.
+- `-S file`: True if file exists and is a socket.
+- `file1 -ef file2`: True if file1 and file2 refer to the same device and inode numbers.
+- `file1 -nt file2`: True if file1 is newer (according to modification date) than file2, or if file1 exists and file2 does not.
+- `file1 -ot file2`: True if file1 is older than file2, or if file2 exists and file1 does not.
+- `-o optname`: True if the shell option optname is enabled. The list of options appears in the description of the -o option to the set builtin (see The Set Builtin).
+- `-v varname`: True if the shell variable varname is set (has been assigned a value).
+- `-R varname`: True if the shell variable varname is set and is a name reference.
+- `-z string`: True if the length of string is zero.
+- `-n string`: True if the length of string is non-zero.
+- `string1 == string2`: True if the strings are equal.
+- `string1 =~ regex`: True if `string1` matches `regex`.
+- `string1 != string2`: True if the strings are not equal.
+- `string1 < string2`: True if string1 sorts before string2 lexicographically.
+- `string1 > string2`: True if string1 sorts after string2 lexicographically.
+- `arg1 OP arg2`: `OP` is one of `-eq`, `-ne`, `-lt`, `-le`, `-gt`, or `-ge`. These arithmetic binary operators return true if `arg1` is equal to, not equal to, less than, less than or equal to, greater than, or greater than or equal to `arg2`, respectively. `arg1` and `arg2` may be positive or negative integers.
+
+{% include links.md %}
